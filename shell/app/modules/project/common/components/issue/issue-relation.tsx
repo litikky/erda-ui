@@ -29,6 +29,7 @@ import {
   ISSUE_COMPLEXITY_MAP,
 } from 'project/common/components/issue/issue-config';
 import { BACKLOG_ISSUE_TYPE, IssueForm, IssueItem } from 'project/pages/backlog/issue-item';
+import { IssueIcon } from 'project/common/components/issue/issue-icon';
 import { getIssueRelation, getIssues } from 'project/services/issue';
 import { getProjectIterations } from 'project/services/project-iteration';
 import issueStore from 'project/stores/issues';
@@ -330,6 +331,7 @@ export const IssueConnection = ({ issueDetail, iterationID, editAuth, setHasEdit
   const [expand, setExpand] = React.useState(false);
   const issueType = issueDetail?.type;
   const data = getIssueRelation.useData();
+
   const _iterationID = iterationID === -1 ? undefined : iterationID; // 如果当前事项是待规划的，待规划不在迭代列表里，默认“全部”时其实还是会带上 -1 作为 id，所以为-1 时就传 undefined
   const issueConnectionList = (data?.relatedTo || [])?.concat(
     (data?.relatedBy || []).map((item) => ({ ...item, isRelatedBy: true })),
@@ -348,7 +350,10 @@ export const IssueConnection = ({ issueDetail, iterationID, editAuth, setHasEdit
   const [relateMrOperation, relateMrContent, relateMrList] = useAddMrRelation({
     expand,
     issueDetail,
-    afterAdd: () => getIssueStreams({ type: issueType, id: issueDetail.id, pageNo: 1, pageSize: 100 }),
+    afterAdd: () => {
+      getIssueDetail({ id: issueDetail.id });
+      return getIssueStreams({ type: issueType, id: issueDetail.id, pageNo: 1, pageSize: 100 });
+    },
     editAuth,
   });
 
@@ -394,7 +399,7 @@ export const IssueConnection = ({ issueDetail, iterationID, editAuth, setHasEdit
     ]),
   ];
   const [activeTabKey, setActiveTabKey] = React.useState(tabs[0].key);
-  const { getIssueStreams } = issueStore.effects;
+  const { getIssueStreams, getIssueDetail } = issueStore.effects;
   if (!issueDetail) return null;
   const curTab = tabs.find((t) => t.key === activeTabKey) as typeof tabs[0];
 
@@ -529,6 +534,14 @@ export const AddIssueRelation = ({
       title: i18n.t('Title'),
       dataIndex: 'title',
       width: 240,
+      render: (title: string, record: ISSUE.Issue) => {
+        return (
+          <div className="flex-h-center">
+            <IssueIcon size={'20'} type={record.type} className="mr-1" />
+            {title}
+          </div>
+        );
+      },
     },
     {
       title: i18n.t('assignee'),
@@ -573,14 +586,16 @@ export const AddIssueRelation = ({
               outside: true,
               placeholder: i18n.t('filter by {name}', { name: i18n.t('Title') }),
             },
-            {
-              label: i18n.t('dop:Type-issue'),
-              type: 'select',
-              key: 'type',
-              options: map(ISSUE_OPTION, (item) => ISSUE_TYPE_MAP[item]),
-              disabled: relationType === RelationType.Inclusion,
-              placeholder: i18n.t('filter by {name}', { name: i18n.t('dop:Type-issue') }),
-            },
+            ...insertWhen(relationType !== RelationType.Inclusion, [
+              {
+                label: i18n.t('dop:Type-issue'),
+                type: 'select',
+                key: 'type',
+                options: map(ISSUE_OPTION, (item) => ISSUE_TYPE_MAP[item]),
+                disabled: relationType === RelationType.Inclusion,
+                placeholder: i18n.t('filter by {name}', { name: i18n.t('dop:Type-issue') }),
+              },
+            ]),
             {
               label: i18n.t('dop:Iteration'),
               type: 'select',
@@ -653,6 +668,7 @@ export const AddIssueRelation = ({
             updater.filterData({
               ...filterData,
               ...value,
+              type: relationType === RelationType.Inclusion ? ['TASK'] : v.type,
               startFinishedAt: finishedAt?.[0],
               endFinishedAt: finishedAt?.[1],
               startCreatedAt: createdAt?.[0],
