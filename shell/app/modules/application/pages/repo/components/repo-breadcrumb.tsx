@@ -43,7 +43,7 @@ const PureRepoBreadcrumb = ({ path, children, splitKey = 'tree' }: IProps) => {
 
     let prevPath = `${basePath}/${curBranch}`;
     paths.forEach((p) => {
-      prevPath = `${prevPath}/${p}`;
+      prevPath = `${prevPath}/${encodeURIComponent(p)}`;
       list.push({
         text: p,
         href: prevPath,

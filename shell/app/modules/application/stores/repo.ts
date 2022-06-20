@@ -218,8 +218,8 @@ const repoStore = createStore({
       if (isIn('repoCompare')) {
         const [compareB, compareA] = params.branches.split('...');
         repoStore.effects.getCompareDetail({
-          compareA: decodeURIComponent(compareA),
-          compareB: decodeURIComponent(compareB),
+          compareA: compareA,
+          compareB: compareB,
         });
       }
     });

@@ -169,6 +169,10 @@ const RepoTree = ({ tree, info, isFetchingInfo, isFetchingTree }: ITreeProps) =>
     } as any);
   }
   const curBranch = branch || tag || info.defaultBranch;
+  const encodePath = tree.path
+    .split('/')
+    .map((item) => encodeURIComponent(item))
+    .join('/');
 
   return (
     <Spin spinning={isFetchingTree || false} wrapperClassName={tree.type === 'tree' ? 'flex-1' : ''}>
@@ -183,7 +187,7 @@ const RepoTree = ({ tree, info, isFetchingInfo, isFetchingTree }: ITreeProps) =>
             rowKey="name"
             scroll={{ x: 800 }}
             onRow={({ name, id }) => {
-              const tropicalPathName = encodeURI(name);
+              const tropicalPathName = encodeURIComponent(name);
               return {
                 onClick: () => {
                   if (inIndexPage) {
@@ -237,12 +241,16 @@ const RepoTree = ({ tree, info, isFetchingInfo, isFetchingTree }: ITreeProps) =>
             <RepoFileContainer
               noEdit
               name={tree.readmeFile}
-              path={`/${commitId || curBranch}${tree.path ? `/${tree.path}` : ''}/${tree.readmeFile}`}
+              path={`/${commitId || curBranch}${tree.path ? `/${encodePath}` : ''}/${tree.readmeFile}`}
             />
           </IF>
         </React.Fragment>
       ) : (
-        <RepoFileContainer maxLines={50} name={tree.entry.name} path={`/${commitId || curBranch}/${tree.path || ''}`} />
+        <RepoFileContainer
+          maxLines={50}
+          name={tree.entry.name}
+          path={`/${commitId || curBranch}/${encodePath || ''}`}
+        />
       )}
     </Spin>
   );
